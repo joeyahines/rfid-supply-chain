@@ -3,12 +3,13 @@
 mod error;
 mod models;
 mod utility;
+mod args;
 
-const KEY_SIZE: usize = 32; // 256 bits
+const KEY_SIZE: usize = 2;
 const SIGNATURE_SIZE: usize = 256;
 
+
 fn main() {
-    println!("Hello, world!");
 }
 
 #[cfg(test)]
@@ -48,35 +49,28 @@ mod tests {
         let keypair1 = Rsa::generate(2048).unwrap();
         let keypair2 = Rsa::generate(2048).unwrap();
         let keypair3 = Rsa::generate(2048).unwrap();
-        let hasher = MessageDigest::sha3_256();
 
-        let pub_key1: Vec<u8> = hash(hasher, &keypair1.public_key_to_pem().unwrap())
-            .unwrap()
-            .to_vec();
-
-        let pub_key2: Vec<u8> = hash(hasher, &keypair2.public_key_to_pem().unwrap())
-            .unwrap()
-            .to_vec();
-
-        let pub_key3: Vec<u8> = hash(hasher, &keypair3.public_key_to_pem().unwrap())
-            .unwrap()
-            .to_vec();
+        let key_id1: Vec<u8> = vec![0, 0];
+        let key_id2: Vec<u8> = vec![0, 1];
+        let key_id3: Vec<u8> = vec![0, 2];
 
         let mut key_map: HashMap<Vec<u8>, Vec<u8>> = HashMap::new();
-        key_map.insert(pub_key1, keypair1.public_key_to_pem().unwrap());
-        key_map.insert(pub_key2, keypair2.public_key_to_pem().unwrap());
-        key_map.insert(pub_key3, keypair3.public_key_to_pem().unwrap());
+        key_map.insert(key_id1.clone(), keypair1.public_key_to_pem().unwrap());
+        key_map.insert(key_id2.clone(), keypair2.public_key_to_pem().unwrap());
+        key_map.insert(key_id3.clone(), keypair3.public_key_to_pem().unwrap());
 
         let data = RFIDBuilder::default()
             .chip_data(42, 5.0, 5.0, 5.0, 5.0)
             .add_entry(
                 keypair1.private_key_to_pem().unwrap(),
                 keypair2.public_key_to_pem().unwrap(),
+                key_id1.clone(),
                 &key_map,
             )
             .add_entry(
                 keypair2.private_key_to_pem().unwrap(),
                 keypair3.public_key_to_pem().unwrap(),
+                key_id2.clone(),
                 &key_map,
             )
             .build();

@@ -1,14 +1,13 @@
 use std::convert::TryFrom;
 use std::io::{Cursor, Read};
 
-use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
-use openssl::hash::{hash, MessageDigest};
+use openssl::hash::{MessageDigest};
 use openssl::pkey::PKey;
 use openssl::rsa::{Padding, Rsa};
 use openssl::sign::{Signer, Verifier};
 
-use crate::error::RFIDDataParseError;
 use crate::{KEY_SIZE, SIGNATURE_SIZE};
+use crate::error::RFIDDataParseError;
 
 #[derive(Debug, Clone)]
 pub struct SupplyChainEntry {
@@ -48,14 +47,11 @@ impl SupplyChainEntry {
         private_key: Vec<u8>,
         next_public_key: Vec<u8>,
         rfid_data: Vec<u8>,
+        public_key_id: Vec<u8>
     ) -> SupplyChainEntry {
         let keypair = Rsa::private_key_from_pem(&private_key).unwrap();
         let keypair = PKey::from_rsa(keypair).unwrap();
         let hasher = MessageDigest::sha3_256();
-
-        let pub_key: Vec<u8> = hash(hasher, &keypair.public_key_to_pem().unwrap())
-            .unwrap()
-            .to_vec();
 
         let mut signer = Signer::new(hasher, &keypair).unwrap();
         signer.set_rsa_padding(Padding::PKCS1).unwrap();
@@ -65,7 +61,7 @@ impl SupplyChainEntry {
 
         let signature = signer.sign_to_vec().unwrap();
 
-        Self { pub_key, signature }
+        Self { pub_key: public_key_id, signature }
     }
 
     pub fn verify_signature(&self, expected_data: &[u8], public_key: &[u8]) -> bool {
@@ -76,49 +72,5 @@ impl SupplyChainEntry {
         verifier.update(expected_data).unwrap();
 
         verifier.verify(&*self.signature).unwrap()
-    }
-}
-
-#[derive(Debug, Clone, Default)]
-pub struct ChipData {
-    pub chip_id: u128,
-    pub freq: f32,
-    pub voltage: f32,
-    pub temp: f32,
-    pub time: f32,
-}
-
-impl Into<Vec<u8>> for ChipData {
-    fn into(self) -> Vec<u8> {
-        let mut bytes = Vec::new();
-
-        bytes.write_u128::<BigEndian>(self.chip_id).unwrap();
-        bytes.write_f32::<BigEndian>(self.freq).unwrap();
-        bytes.write_f32::<BigEndian>(self.voltage).unwrap();
-        bytes.write_f32::<BigEndian>(self.temp).unwrap();
-        bytes.write_f32::<BigEndian>(self.time).unwrap();
-        bytes
-    }
-}
-
-impl TryFrom<Vec<u8>> for ChipData {
-    type Error = RFIDDataParseError;
-
-    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
-        let mut cursor = Cursor::new(bytes);
-
-        let chip_id = cursor.read_u128::<BigEndian>()?;
-        let freq = cursor.read_f32::<BigEndian>()?;
-        let voltage = cursor.read_f32::<BigEndian>()?;
-        let temp = cursor.read_f32::<BigEndian>()?;
-        let time = cursor.read_f32::<BigEndian>()?;
-
-        Ok(Self {
-            chip_id,
-            freq,
-            voltage,
-            temp,
-            time,
-        })
     }
 }

@@ -5,9 +5,10 @@ use std::io::{Cursor, Read};
 use byteorder::{BigEndian, ReadBytesExt};
 use crc::crc16;
 
+se crate::{KEY_SIZE, SIGNATURE_SIZE};
 use crate::error::RFIDDataParseError;
-use crate::models::supply_chain::{ChipData, SupplyChainEntry};
-use crate::{KEY_SIZE, SIGNATURE_SIZE};
+use crate::models::chip_data::ChipData;
+use crate::models::supply_chain::SupplyChainEntry;
 
 #[derive(Debug, Clone, Default)]
 pub struct RFIDData {
@@ -132,6 +133,7 @@ impl RFIDBuilder {
         mut self,
         private_key: Vec<u8>,
         next_public_key: Vec<u8>,
+        public_key_id: Vec<u8>,
         keys: &HashMap<Vec<u8>, Vec<u8>>,
     ) -> Self {
         let data = if let Some(last_entry) = self.rfid_data.entries.last() {
@@ -146,7 +148,7 @@ impl RFIDBuilder {
 
         self.rfid_data
             .entries
-            .push(SupplyChainEntry::new(private_key, next_public_key, data));
+            .push(SupplyChainEntry::new(private_key, next_public_key, data, public_key_id));
         self
     }
 
