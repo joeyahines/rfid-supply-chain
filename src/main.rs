@@ -4,12 +4,23 @@ mod error;
 mod models;
 mod utility;
 mod args;
+mod database;
+mod central_server;
+
+use crate::args::{Args, Mode};
+use structopt::StructOpt;
 
 const KEY_SIZE: usize = 2;
 const SIGNATURE_SIZE: usize = 256;
 
+#[tokio::main]
+async fn main() {
+    let args: Args = Args::from_args();
 
-fn main() {
+    match args.mode {
+        Mode::DistributorServer => {}
+        Mode::CentralServer => central_server::central_server(args).await
+    }
 }
 
 #[cfg(test)]

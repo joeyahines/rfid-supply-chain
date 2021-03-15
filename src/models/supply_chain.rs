@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 use std::io::{Cursor, Read};
+use serde::{Serialize, Deserialize};
 
 use openssl::hash::{MessageDigest};
 use openssl::pkey::PKey;
@@ -9,7 +10,7 @@ use openssl::sign::{Signer, Verifier};
 use crate::{KEY_SIZE, SIGNATURE_SIZE};
 use crate::error::RFIDDataParseError;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SupplyChainEntry {
     pub pub_key: Vec<u8>,
     pub signature: Vec<u8>,

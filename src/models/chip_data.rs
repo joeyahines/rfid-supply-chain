@@ -1,11 +1,12 @@
 use std::convert::TryFrom;
 use std::io::Cursor;
+use serde::{Serialize, Deserialize};
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 use crate::error::RFIDDataParseError;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ChipData {
     pub chip_id: u128,
     pub freq: f32,

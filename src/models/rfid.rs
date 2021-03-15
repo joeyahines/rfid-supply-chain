@@ -1,16 +1,17 @@
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::io::{Cursor, Read};
+use serde::{Serialize, Deserialize};
 
 use byteorder::{BigEndian, ReadBytesExt};
 use crc::crc16;
 
-se crate::{KEY_SIZE, SIGNATURE_SIZE};
+use crate::{KEY_SIZE, SIGNATURE_SIZE};
 use crate::error::RFIDDataParseError;
 use crate::models::chip_data::ChipData;
 use crate::models::supply_chain::SupplyChainEntry;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RFIDData {
     pub crc: u16,
     pub chip_data: ChipData,
