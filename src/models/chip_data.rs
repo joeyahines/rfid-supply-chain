@@ -1,6 +1,6 @@
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::io::Cursor;
-use serde::{Serialize, Deserialize};
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 

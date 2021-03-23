@@ -1,15 +1,16 @@
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::io::{Cursor, Read};
-use serde::{Serialize, Deserialize};
 
 use byteorder::{BigEndian, ReadBytesExt};
 use crc::crc16;
 
-use crate::{KEY_SIZE, SIGNATURE_SIZE};
 use crate::error::RFIDDataParseError;
 use crate::models::chip_data::ChipData;
+use crate::models::key::PublicKey;
 use crate::models::supply_chain::SupplyChainEntry;
+use crate::SIGNATURE_SIZE;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct RFIDData {
@@ -26,10 +27,10 @@ impl RFIDData {
 
     pub fn validate_chain(
         &self,
-        keys: &HashMap<Vec<u8>, Vec<u8>>,
-        public_key: Vec<u8>,
+        keys: &HashMap<u32, PublicKey>,
+        public_key: PublicKey,
     ) -> Result<(), usize> {
-        let mut data_buff = Vec::with_capacity(KEY_SIZE + SIGNATURE_SIZE);
+        let mut data_buff = Vec::new();
 
         for (ndx, entry) in self.entries.iter().enumerate() {
             data_buff.clear();
@@ -44,19 +45,19 @@ impl RFIDData {
             if ndx == 0 {
                 let chip_data: Vec<u8> = self.chip_data.clone().into();
                 data_buff.extend_from_slice(&chip_data);
-                data_buff.extend_from_slice(next_public_key);
+                data_buff.extend_from_slice(&next_public_key.key);
             } else {
                 let last_entry = &self.entries[ndx - 1];
                 let last_pub_key = keys.get(&last_entry.pub_key).unwrap();
                 data_buff.extend_from_slice(&crate::utility::hash_from_signature(
-                    last_pub_key,
+                    &last_pub_key.key,
                     &last_entry.signature,
                 ));
                 data_buff.extend_from_slice(&last_entry.signature);
-                data_buff.extend_from_slice(next_public_key);
+                data_buff.extend_from_slice(&next_public_key.key);
             }
 
-            if !entry.verify_signature(&data_buff, keys.get(&entry.pub_key).unwrap()) {
+            if !entry.verify_signature(&data_buff, &keys.get(&entry.pub_key).unwrap().key) {
                 return Err(ndx);
             }
         }
@@ -110,7 +111,7 @@ impl TryFrom<Vec<u8>> for RFIDData {
 
         let mut entries = Vec::with_capacity(entry_count as usize);
         for _ in 0..entry_count {
-            let mut entry_bytes = vec![0u8; KEY_SIZE + SIGNATURE_SIZE];
+            let mut entry_bytes = vec![0u8; 4 + SIGNATURE_SIZE];
             cursor.read_exact(&mut entry_bytes)?;
             let entry = SupplyChainEntry::try_from(entry_bytes)?;
             entries.push(entry)
@@ -133,23 +134,28 @@ impl RFIDBuilder {
     pub fn add_entry(
         mut self,
         private_key: Vec<u8>,
-        next_public_key: Vec<u8>,
-        public_key_id: Vec<u8>,
-        keys: &HashMap<Vec<u8>, Vec<u8>>,
+        public_key_id: u32,
+        next_public_key_id: u32,
+        keys: &HashMap<u32, PublicKey>,
     ) -> Self {
         let data = if let Some(last_entry) = self.rfid_data.entries.last() {
             let last_public_key = keys.get(&last_entry.pub_key).unwrap();
             let mut buf =
-                crate::utility::hash_from_signature(last_public_key, &last_entry.signature);
+                crate::utility::hash_from_signature(&last_public_key.key, &last_entry.signature);
             buf.extend_from_slice(&last_entry.signature);
             buf
         } else {
             self.rfid_data.chip_data.clone().into()
         };
 
-        self.rfid_data
-            .entries
-            .push(SupplyChainEntry::new(private_key, next_public_key, data, public_key_id));
+        let next_public_key = keys.get(&next_public_key_id).unwrap();
+
+        self.rfid_data.entries.push(SupplyChainEntry::new(
+            private_key,
+            next_public_key.key.clone(),
+            data,
+            public_key_id,
+        ));
         self
     }
 
@@ -175,5 +181,11 @@ impl RFIDBuilder {
         self.rfid_data.crc = crc;
 
         self.rfid_data
+    }
+}
+
+impl From<RFIDData> for RFIDBuilder {
+    fn from(rfid_data: RFIDData) -> Self {
+        Self { rfid_data }
     }
 }
