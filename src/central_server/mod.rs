@@ -9,6 +9,7 @@ use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::sync::Arc;
 use warp::Filter;
+use crate::error::APIError;
 
 fn request_keys_filter(
     db: Arc<Database>,
@@ -32,11 +33,11 @@ fn request_keys_filter(
         })
 }
 
-pub async fn central_server(args: &Args, cent_args: &CentralServerArgs) {
+pub async fn central_server(args: &Args, cent_args: &CentralServerArgs) -> Result<(), APIError> {
     let db = database::Database::new(&cent_args.database_path);
 
     if let Some(import) = &cent_args.import_path {
-        let import_cfg = ImportConfig::new(import).unwrap();
+        let import_cfg = ImportConfig::new(import)?;
 
         for public_key in import_cfg.import {
             if Rsa::public_key_from_pem(&public_key.key).is_ok() {
@@ -51,4 +52,6 @@ pub async fn central_server(args: &Args, cent_args: &CentralServerArgs) {
             .run((Ipv4Addr::from_str(&args.address).unwrap(), args.port))
             .await;
     }
+
+    Ok(())
 }

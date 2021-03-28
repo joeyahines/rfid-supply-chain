@@ -20,9 +20,9 @@ async fn main() {
 
     match &args.mode {
         Mode::DistributorServer(dist_args) => {
-            distributor_server::distributor_server(&args, dist_args).await
+            distributor_server::distributor_server(&args, dist_args).await.unwrap()
         }
-        Mode::CentralServer(cent_args) => central_server::central_server(&args, cent_args).await,
+        Mode::CentralServer(cent_args) => central_server::central_server(&args, cent_args).await.unwrap(),
     }
 }
 

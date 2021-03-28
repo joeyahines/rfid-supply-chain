@@ -6,17 +6,17 @@ use crate::utility::open_private_key;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
 use reqwest::Url;
-use std::convert::Infallible;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use warp::Filter;
+use crate::error::APIError;
 
 async fn update_blockchain(
     request: UpdateBlockChainRequest,
     central_server_addr: Url,
     key_id: u32,
     private_key: Rsa<Private>,
-) -> Result<impl warp::Reply, Infallible> {
+) -> Result<impl warp::Reply, warp::Rejection> {
     let url = central_server_addr.join("api/request_keys").unwrap();
 
     let client = reqwest::Client::new();
@@ -38,10 +38,10 @@ async fn update_blockchain(
         .json(&key_request)
         .send()
         .await
-        .unwrap()
+        .map_err(|e| warp::reject::custom(APIError::from(e)))?
         .json()
         .await
-        .unwrap();
+        .map_err(|e| warp::reject::custom(APIError::from(e)))?;
 
     let rfid_builder = RFIDBuilder::from(request.rfid_data);
 
@@ -81,7 +81,7 @@ fn update_blockchain_filter(
         .and_then(update_blockchain)
 }
 
-pub async fn distributor_server(args: &Args, dist_args: &DistributorServerArgs) {
+pub async fn distributor_server(args: &Args, dist_args: &DistributorServerArgs) -> Result<(), APIError>{
     let private_key = open_private_key(dist_args.private_key.clone());
     println!("Starting dist server...");
     warp::serve(update_blockchain_filter(
@@ -91,4 +91,6 @@ pub async fn distributor_server(args: &Args, dist_args: &DistributorServerArgs) 
     ))
     .run((Ipv4Addr::from_str(&args.address).unwrap(), args.port))
     .await;
+
+    Ok(())
 }
