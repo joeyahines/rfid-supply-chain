@@ -2,13 +2,8 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::io::{Cursor, Read};
 
-use openssl::hash::MessageDigest;
-use openssl::pkey::PKey;
-use openssl::rsa::{Padding, Rsa};
-use openssl::sign::{Signer, Verifier};
-
 use crate::error::RFIDDataParseError;
-use crate::models::{deserialize_base64, serialize_base64};
+use crate::models::{deserialize_base64, serialize_base64, BlockChainEntry};
 use crate::SIGNATURE_SIZE;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 
@@ -57,31 +52,17 @@ impl SupplyChainEntry {
         rfid_data: Vec<u8>,
         public_key_id: u32,
     ) -> SupplyChainEntry {
-        let keypair = Rsa::private_key_from_pem(&private_key).unwrap();
-        let keypair = PKey::from_rsa(keypair).unwrap();
-        let hasher = MessageDigest::sha3_256();
-
-        let mut signer = Signer::new(hasher, &keypair).unwrap();
-        signer.set_rsa_padding(Padding::PKCS1).unwrap();
-
-        signer.update(&rfid_data).unwrap();
-        signer.update(&next_public_key).unwrap();
-
-        let signature = signer.sign_to_vec().unwrap();
+        let signature = Self::create_signature(private_key, vec![rfid_data, next_public_key]);
 
         Self {
             pub_key: public_key_id,
             signature,
         }
     }
+}
 
-    pub fn verify_signature(&self, expected_data: &[u8], public_key: &[u8]) -> bool {
-        let pkey = PKey::public_key_from_pem(&public_key).unwrap();
-        let hasher = MessageDigest::sha3_256();
-        let mut verifier = Verifier::new(hasher, &pkey).unwrap();
-
-        verifier.update(expected_data).unwrap();
-
-        verifier.verify(&*self.signature).unwrap()
+impl BlockChainEntry for SupplyChainEntry {
+    fn signature(&self) -> Vec<u8> {
+        self.signature.clone()
     }
 }

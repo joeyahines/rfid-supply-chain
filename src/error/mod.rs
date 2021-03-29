@@ -1,6 +1,6 @@
+use config::ConfigError;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use config::ConfigError;
 
 #[derive(Debug)]
 pub enum RFIDDataParseError {
@@ -61,7 +61,7 @@ impl Display for APIError {
             APIError::ReqwestError(e) => write!(f, "Reqwest error: {}", e),
             APIError::WarpError(e) => write!(f, "Warp error: {}", e),
             APIError::RFIDDataError(e) => write!(f, "RFIDDataError: {}", e),
-            APIError::ConfigError(e) => writeln!(f, "Config error: {}", e)
+            APIError::ConfigError(e) => writeln!(f, "Config error: {}", e),
         }
     }
 }

@@ -20,9 +20,13 @@ async fn main() {
 
     match &args.mode {
         Mode::DistributorServer(dist_args) => {
-            distributor_server::distributor_server(&args, dist_args).await.unwrap()
+            distributor_server::distributor_server(&args, dist_args)
+                .await
+                .unwrap()
         }
-        Mode::CentralServer(cent_args) => central_server::central_server(&args, cent_args).await.unwrap(),
+        Mode::CentralServer(cent_args) => central_server::central_server(&args, cent_args)
+            .await
+            .unwrap(),
     }
 }
 
@@ -161,7 +165,8 @@ mod tests {
             )
             .build();
 
-        data.validate_chain(&key_map, key_map.get(&key_id2).unwrap().clone()).unwrap();
+        data.validate_chain(&key_map, key_map.get(&key_id2).unwrap().clone())
+            .unwrap();
 
         println!("{}", serde_json::to_string(&data).unwrap())
     }

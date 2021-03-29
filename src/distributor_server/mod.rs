@@ -1,4 +1,5 @@
 use crate::args::{Args, DistributorServerArgs};
+use crate::error::APIError;
 use crate::models::requests::key_request::{KeyRequest, KeyResponse};
 use crate::models::requests::update_blockchain::UpdateBlockChainRequest;
 use crate::models::rfid::RFIDBuilder;
@@ -9,7 +10,6 @@ use reqwest::Url;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use warp::Filter;
-use crate::error::APIError;
 
 async fn update_blockchain(
     request: UpdateBlockChainRequest,
@@ -81,7 +81,10 @@ fn update_blockchain_filter(
         .and_then(update_blockchain)
 }
 
-pub async fn distributor_server(args: &Args, dist_args: &DistributorServerArgs) -> Result<(), APIError>{
+pub async fn distributor_server(
+    args: &Args,
+    dist_args: &DistributorServerArgs,
+) -> Result<(), APIError> {
     let private_key = open_private_key(dist_args.private_key.clone());
     println!("Starting dist server...");
     warp::serve(update_blockchain_filter(

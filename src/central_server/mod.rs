@@ -2,6 +2,7 @@ use crate::args::{Args, CentralServerArgs};
 use crate::config::import_config::ImportConfig;
 use crate::database;
 use crate::database::Database;
+use crate::error::APIError;
 use crate::models::key::PublicKey;
 use crate::models::requests::key_request::{KeyRequest, KeyResponse};
 use openssl::rsa::Rsa;
@@ -9,7 +10,6 @@ use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::sync::Arc;
 use warp::Filter;
-use crate::error::APIError;
 
 fn request_keys_filter(
     db: Arc<Database>,

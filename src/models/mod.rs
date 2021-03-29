@@ -1,3 +1,4 @@
+pub mod central_record;
 pub mod chip_data;
 pub mod key;
 pub mod requests;
@@ -5,6 +6,10 @@ pub mod rfid;
 pub mod supply_chain;
 
 use base64::{decode, encode};
+use openssl::hash::MessageDigest;
+use openssl::pkey::PKey;
+use openssl::rsa::{Padding, Rsa};
+use openssl::sign::{Signer, Verifier};
 use serde::{Deserialize, Deserializer, Serializer};
 
 pub fn serialize_base64<T, S>(buffer: &T, serializer: S) -> Result<S::Ok, S::Error>
@@ -22,4 +27,33 @@ where
     use serde::de::Error;
     String::deserialize(deserializer)
         .and_then(|string| decode(string).map_err(|err| Error::custom(err.to_string())))
+}
+
+pub trait BlockChainEntry {
+    fn signature(&self) -> Vec<u8>;
+
+    fn create_signature(private_key: Vec<u8>, members: Vec<Vec<u8>>) -> Vec<u8> {
+        let keypair = Rsa::private_key_from_pem(&private_key).unwrap();
+        let keypair = PKey::from_rsa(keypair).unwrap();
+        let hasher = MessageDigest::sha3_256();
+
+        let mut signer = Signer::new(hasher, &keypair).unwrap();
+        signer.set_rsa_padding(Padding::PKCS1).unwrap();
+
+        for member in members {
+            signer.update(&member).unwrap();
+        }
+
+        signer.sign_to_vec().unwrap()
+    }
+
+    fn verify_signature(&self, expected_data: &[u8], public_key: &[u8]) -> bool {
+        let pkey = PKey::public_key_from_pem(&public_key).unwrap();
+        let hasher = MessageDigest::sha3_256();
+        let mut verifier = Verifier::new(hasher, &pkey).unwrap();
+
+        verifier.update(expected_data).unwrap();
+
+        verifier.verify(&self.signature()).unwrap()
+    }
 }

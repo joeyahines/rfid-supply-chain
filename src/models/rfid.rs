@@ -10,6 +10,7 @@ use crate::error::RFIDDataParseError;
 use crate::models::chip_data::ChipData;
 use crate::models::key::PublicKey;
 use crate::models::supply_chain::SupplyChainEntry;
+use crate::models::BlockChainEntry;
 use crate::SIGNATURE_SIZE;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
