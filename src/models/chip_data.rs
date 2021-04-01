@@ -4,7 +4,7 @@ use std::io::Cursor;
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-use crate::error::RFIDDataParseError;
+use crate::error::RfidDataParseError;
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct ChipData {
@@ -29,7 +29,7 @@ impl Into<Vec<u8>> for ChipData {
 }
 
 impl TryFrom<Vec<u8>> for ChipData {
-    type Error = RFIDDataParseError;
+    type Error = RfidDataParseError;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         let mut cursor = Cursor::new(bytes);

@@ -6,7 +6,7 @@ use std::io::{Cursor, Read};
 use byteorder::{BigEndian, ReadBytesExt};
 use crc::crc16;
 
-use crate::error::RFIDDataParseError;
+use crate::error::RfidDataParseError;
 use crate::models::chip_data::ChipData;
 use crate::models::key::PublicKey;
 use crate::models::supply_chain::SupplyChainEntry;
@@ -14,13 +14,13 @@ use crate::models::BlockChainEntry;
 use crate::SIGNATURE_SIZE;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct RFIDData {
+pub struct RfidData {
     pub crc: u16,
     pub chip_data: ChipData,
     pub entries: Vec<SupplyChainEntry>,
 }
 
-impl RFIDData {
+impl RfidData {
     pub fn calc_crc(&self) -> u16 {
         let bytes: Vec<u8> = self.clone().into();
         ((bytes[0] as u16) << 8) | bytes[1] as u16
@@ -71,7 +71,7 @@ impl RFIDData {
     }
 }
 
-impl Into<Vec<u8>> for RFIDData {
+impl Into<Vec<u8>> for RfidData {
     fn into(self) -> Vec<u8> {
         let mut bytes = Vec::new();
         let entry_len = self.entries.len() as u16;
@@ -97,8 +97,8 @@ impl Into<Vec<u8>> for RFIDData {
     }
 }
 
-impl TryFrom<Vec<u8>> for RFIDData {
-    type Error = RFIDDataParseError;
+impl TryFrom<Vec<u8>> for RfidData {
+    type Error = RfidDataParseError;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         let mut cursor = Cursor::new(bytes);
@@ -127,11 +127,11 @@ impl TryFrom<Vec<u8>> for RFIDData {
 }
 
 #[derive(Default)]
-pub struct RFIDBuilder {
-    rfid_data: RFIDData,
+pub struct RfidBuilder {
+    rfid_data: RfidData,
 }
 
-impl RFIDBuilder {
+impl RfidBuilder {
     pub fn add_entry(
         mut self,
         private_key: Vec<u8>,
@@ -177,7 +177,7 @@ impl RFIDBuilder {
         self
     }
 
-    pub fn build(mut self) -> RFIDData {
+    pub fn build(mut self) -> RfidData {
         let crc = self.rfid_data.calc_crc();
         self.rfid_data.crc = crc;
 
@@ -185,8 +185,8 @@ impl RFIDBuilder {
     }
 }
 
-impl From<RFIDData> for RFIDBuilder {
-    fn from(rfid_data: RFIDData) -> Self {
+impl From<RfidData> for RfidBuilder {
+    fn from(rfid_data: RfidData) -> Self {
         Self { rfid_data }
     }
 }

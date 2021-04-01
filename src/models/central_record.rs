@@ -1,6 +1,8 @@
+use crate::database::DatabaseModel;
 use crate::models::key::PublicKey;
-use crate::models::rfid::RFIDData;
+use crate::models::rfid::RfidData;
 use crate::models::{deserialize_base64, serialize_base64, BlockChainEntry};
+use byteorder::{LittleEndian, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -8,7 +10,7 @@ use std::collections::HashMap;
 pub struct CentralEntry {
     pub dist_id: u32,
     pub next_dist_id: u32,
-    pub rfid_data: RFIDData,
+    pub rfid_data: RfidData,
     #[serde(
         serialize_with = "serialize_base64",
         deserialize_with = "deserialize_base64"
@@ -22,7 +24,7 @@ impl CentralEntry {
         dist_id: u32,
         next_dist_id: u32,
         next_dist_pk: Vec<u8>,
-        rfid_data: RFIDData,
+        rfid_data: RfidData,
         record_data: Vec<u8>,
     ) -> Self {
         let data = if record_data.is_empty() {
@@ -54,17 +56,47 @@ impl BlockChainEntry for CentralEntry {
 
 #[derive(Debug, Clone, Deserialize, Serialize, Default)]
 pub struct CentralRecord {
+    pub chip_id: u128,
     pub entries: Vec<CentralEntry>,
 }
 
+impl DatabaseModel for CentralRecord {
+    type ID = u128;
+
+    fn id(&self) -> Self::ID {
+        self.chip_id
+    }
+
+    fn set_id(&mut self, id: Self::ID) {
+        self.chip_id = id
+    }
+
+    fn id_type_to_bytes(id: Self::ID) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        bytes.write_u128::<LittleEndian>(id).unwrap();
+        bytes
+    }
+
+    fn tree() -> String {
+        "central_record".to_string()
+    }
+}
+
 impl CentralRecord {
+    pub fn new(chip_id: u128) -> Self {
+        Self {
+            chip_id,
+            entries: vec![],
+        }
+    }
+
     pub fn add_entry(
         &mut self,
         private_key: Vec<u8>,
         dist_id: u32,
         next_dist_id: u32,
         next_dist_pk: Vec<u8>,
-        rfid_data: RFIDData,
+        rfid_data: RfidData,
     ) {
         let record_data: Vec<u8> = if self.entries.is_empty() {
             Vec::new()
@@ -125,7 +157,7 @@ impl CentralRecord {
 mod tests {
     use crate::models::central_record::CentralRecord;
     use crate::models::key::PublicKey;
-    use crate::models::rfid::RFIDBuilder;
+    use crate::models::rfid::RfidBuilder;
     use openssl::rsa::Rsa;
     use std::collections::HashMap;
 
@@ -176,7 +208,7 @@ mod tests {
             ),
         );
 
-        let data = RFIDBuilder::default()
+        let data = RfidBuilder::default()
             .chip_data(42, 5.0, 5.0, 5.0, 5.0)
             .add_entry(
                 keypair1.private_key_to_pem().unwrap(),

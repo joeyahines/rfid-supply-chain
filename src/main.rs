@@ -1,4 +1,5 @@
 #![allow(dead_code)]
+#![allow(clippy::from_over_into)]
 
 mod args;
 mod central_server;
@@ -42,7 +43,7 @@ mod tests {
     use openssl::sign::Signer;
 
     use crate::models::key::PublicKey;
-    use crate::models::rfid::{RFIDBuilder, RFIDData};
+    use crate::models::rfid::{RfidBuilder, RfidData};
     use crate::utility::{hash_from_signature, open_private_key};
 
     #[test]
@@ -100,7 +101,7 @@ mod tests {
             ),
         );
 
-        let data = RFIDBuilder::default()
+        let data = RfidBuilder::default()
             .chip_data(42, 5.0, 5.0, 5.0, 5.0)
             .add_entry(
                 keypair1.private_key_to_pem().unwrap(),
@@ -121,7 +122,7 @@ mod tests {
             .validate_chain(&key_map, key_map.get(&key_id3).unwrap().clone())
             .is_ok());
         let data2: Vec<u8> = data.clone().into();
-        let data2 = RFIDData::try_from(data2).unwrap();
+        let data2 = RfidData::try_from(data2).unwrap();
         assert!(data2.valid_crc());
         assert!(data2
             .validate_chain(&key_map, key_map.get(&key_id3).unwrap().clone())
@@ -155,7 +156,7 @@ mod tests {
                 "Cool Chip 123".to_string(),
             ),
         );
-        let data = RFIDBuilder::default()
+        let data = RfidBuilder::default()
             .chip_data(42, 5.0, 5.0, 5.0, 5.0)
             .add_entry(
                 keypair1.private_key_to_pem().unwrap(),

@@ -1,8 +1,9 @@
 use crate::args::{Args, DistributorServerArgs};
-use crate::error::APIError;
+use crate::error::ApiError;
 use crate::models::requests::key_request::{KeyRequest, KeyResponse};
 use crate::models::requests::update_blockchain::UpdateBlockChainRequest;
-use crate::models::rfid::RFIDBuilder;
+use crate::models::requests::update_record::{UpdateRecordRequest, UpdateRecordResponse};
+use crate::models::rfid::{RfidBuilder, RfidData};
 use crate::utility::open_private_key;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
@@ -10,6 +11,20 @@ use reqwest::Url;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use warp::Filter;
+
+async fn update_record(
+    client: reqwest::Client,
+    central_server_addr: Url,
+    dist_id: u32,
+    next_dist_id: u32,
+    rfid_data: RfidData,
+    private_key: Rsa<Private>,
+) -> Result<UpdateRecordResponse, ApiError> {
+    let req = UpdateRecordRequest::new(dist_id, next_dist_id, rfid_data, &private_key);
+    let url = central_server_addr.join("api/update_record").unwrap();
+
+    Ok(client.post(url).json(&req).send().await?.json().await?)
+}
 
 async fn update_blockchain(
     request: UpdateBlockChainRequest,
@@ -38,12 +53,12 @@ async fn update_blockchain(
         .json(&key_request)
         .send()
         .await
-        .map_err(|e| warp::reject::custom(APIError::from(e)))?
+        .map_err(|e| warp::reject::custom(ApiError::from(e)))?
         .json()
         .await
-        .map_err(|e| warp::reject::custom(APIError::from(e)))?;
+        .map_err(|e| warp::reject::custom(ApiError::from(e)))?;
 
-    let rfid_builder = RFIDBuilder::from(request.rfid_data);
+    let rfid_builder = RfidBuilder::from(request.rfid_data);
 
     let rfid_data = rfid_builder
         .add_entry(
@@ -59,7 +74,18 @@ async fn update_blockchain(
             &res.keys,
             res.keys.get(&request.next_distributor).unwrap().clone(),
         ) {
-            Ok(_) => serde_json::to_string(&rfid_data).unwrap(),
+            Ok(_) => {
+                update_record(
+                    client,
+                    central_server_addr,
+                    key_id,
+                    request.next_distributor,
+                    rfid_data.clone(),
+                    private_key,
+                )
+                .await?;
+                serde_json::to_string(&rfid_data).unwrap()
+            }
             Err(e) => format!("Failed to validate at position {}", e),
         },
     )
@@ -84,7 +110,7 @@ fn update_blockchain_filter(
 pub async fn distributor_server(
     args: &Args,
     dist_args: &DistributorServerArgs,
-) -> Result<(), APIError> {
+) -> Result<(), ApiError> {
     let private_key = open_private_key(dist_args.private_key.clone());
     println!("Starting dist server...");
     warp::serve(update_blockchain_filter(

@@ -36,6 +36,7 @@ pub struct CentralServerArgs {
         parse(from_os_str)
     )]
     pub database_path: PathBuf,
+    pub private_key: PathBuf,
     #[structopt(short = "i", long = "import", parse(from_os_str))]
     pub import_path: Option<PathBuf>,
 }

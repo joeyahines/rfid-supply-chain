@@ -2,10 +2,15 @@ use crate::args::{Args, CentralServerArgs};
 use crate::config::import_config::ImportConfig;
 use crate::database;
 use crate::database::Database;
-use crate::error::APIError;
+use crate::error::ApiError;
+use crate::models::central_record::CentralRecord;
 use crate::models::key::PublicKey;
 use crate::models::requests::key_request::{KeyRequest, KeyResponse};
+use crate::models::requests::update_record::{UpdateRecordRequest, UpdateRecordResponse};
+use crate::utility::open_private_key;
+use openssl::pkey::Private;
 use openssl::rsa::Rsa;
+use std::collections::HashMap;
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -17,7 +22,6 @@ fn request_keys_filter(
     warp::get()
         .and(warp::path("api"))
         .and(warp::path("request_keys"))
-        .and(warp::body::content_length_limit(1024 * 16))
         .and(warp::body::json())
         .and(warp::any().map(move || db.clone()))
         .map(|key_request: KeyRequest, db: Arc<Database>| {
@@ -33,7 +37,61 @@ fn request_keys_filter(
         })
 }
 
-pub async fn central_server(args: &Args, cent_args: &CentralServerArgs) -> Result<(), APIError> {
+fn update_record(
+    db: Arc<Database>,
+    private_key: Rsa<Private>,
+) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
+    warp::post()
+        .and(warp::path("api"))
+        .and(warp::path("update_record"))
+        .and(warp::body::json())
+        .and(warp::any().map(move || db.clone()))
+        .and(warp::any().map(move || private_key.clone()))
+        .map(
+            |update_req: UpdateRecordRequest, db: Arc<Database>, private_key: Rsa<Private>| {
+                let mut keys = HashMap::new();
+
+                for entry in update_req.rfid_data.entries.iter() {
+                    keys.insert(entry.pub_key, db.fetch::<PublicKey>(entry.pub_key).unwrap());
+                }
+
+                let next_dist_key = db.fetch::<PublicKey>(update_req.next_dist_id).unwrap();
+
+                if update_req
+                    .rfid_data
+                    .validate_chain(&keys, next_dist_key.clone())
+                    .is_err()
+                {
+                    warp::reply::json(&UpdateRecordResponse {
+                        record: None,
+                        success: false,
+                    })
+                } else {
+                    let chip_id = update_req.rfid_data.chip_data.chip_id;
+                    let mut central_record = db
+                        .fetch::<CentralRecord>(chip_id)
+                        .unwrap_or_else(|| CentralRecord::new(chip_id));
+
+                    central_record.add_entry(
+                        private_key.private_key_to_pem().unwrap(),
+                        update_req.dist_id,
+                        update_req.next_dist_id,
+                        next_dist_key.key,
+                        update_req.rfid_data,
+                    );
+
+                    db.insert::<CentralRecord>(central_record.clone());
+
+                    warp::reply::json(&UpdateRecordResponse {
+                        record: Some(central_record),
+                        success: true,
+                    })
+                }
+            },
+        )
+}
+
+pub async fn central_server(args: &Args, cent_args: &CentralServerArgs) -> Result<(), ApiError> {
     let db = database::Database::new(&cent_args.database_path);
 
     if let Some(import) = &cent_args.import_path {
@@ -48,7 +106,10 @@ pub async fn central_server(args: &Args, cent_args: &CentralServerArgs) -> Resul
         }
     } else {
         println!("Starting central server...");
-        warp::serve(request_keys_filter(db))
+
+        let private_key = open_private_key(cent_args.private_key.clone());
+
+        warp::serve(request_keys_filter(db.clone()).or(update_record(db, private_key)))
             .run((Ipv4Addr::from_str(&args.address).unwrap(), args.port))
             .await;
     }

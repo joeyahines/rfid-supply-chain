@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::io::{Cursor, Read};
 
-use crate::error::RFIDDataParseError;
+use crate::error::RfidDataParseError;
 use crate::models::{deserialize_base64, serialize_base64, BlockChainEntry};
 use crate::SIGNATURE_SIZE;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
@@ -31,7 +31,7 @@ impl Into<Vec<u8>> for SupplyChainEntry {
 }
 
 impl TryFrom<Vec<u8>> for SupplyChainEntry {
-    type Error = RFIDDataParseError;
+    type Error = RfidDataParseError;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         let mut cursor = Cursor::new(bytes);
