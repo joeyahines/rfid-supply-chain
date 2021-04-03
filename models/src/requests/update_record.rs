@@ -1,9 +1,9 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::central_record::CentralRecord;
-use crate::models::rfid::RfidData;
-use crate::models::BlockChainEntry;
-use crate::models::{deserialize_base64, serialize_base64};
+use crate::central_record::CentralRecord;
+use crate::rfid::RfidData;
+use crate::BlockChainEntry;
+use crate::{deserialize_base64, serialize_base64};
 use byteorder::{BigEndian, WriteBytesExt};
 use openssl::hash::MessageDigest;
 use openssl::pkey::{PKey, Private};
@@ -23,7 +23,7 @@ pub struct UpdateRecordRequest {
 }
 
 impl UpdateRecordRequest {
-    pub(crate) fn new(
+    pub fn new(
         dist_id: u32,
         next_dist_id: u32,
         rfid_data: RfidData,

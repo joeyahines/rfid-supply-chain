@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::key::PublicKey;
+use crate::key::PublicKey;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

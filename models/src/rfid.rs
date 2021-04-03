@@ -7,10 +7,10 @@ use byteorder::{BigEndian, ReadBytesExt};
 use crc::crc16;
 
 use crate::error::RfidDataParseError;
-use crate::models::chip_data::ChipData;
-use crate::models::key::PublicKey;
-use crate::models::supply_chain::SupplyChainEntry;
-use crate::models::BlockChainEntry;
+use crate::chip_data::ChipData;
+use crate::key::PublicKey;
+use crate::supply_chain::SupplyChainEntry;
+use crate::BlockChainEntry;
 use crate::SIGNATURE_SIZE;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

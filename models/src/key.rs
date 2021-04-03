@@ -1,5 +1,5 @@
-use crate::database::DatabaseModel;
-use crate::models::{deserialize_base64, serialize_base64};
+use crate::DatabaseModel;
+use crate::{deserialize_base64, serialize_base64};
 use byteorder::{LittleEndian, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 

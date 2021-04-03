@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::models::rfid::RfidData;
+use crate::rfid::RfidData;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateBlockChainRequest {
