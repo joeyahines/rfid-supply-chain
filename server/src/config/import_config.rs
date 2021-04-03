@@ -1,4 +1,4 @@
-use crate::models::key::PublicKey;
+use models::key::PublicKey;
 use config::{Config, ConfigError, File};
 use serde::Deserialize;
 use std::path::Path;

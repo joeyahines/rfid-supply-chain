@@ -7,13 +7,10 @@ mod config;
 mod database;
 mod distributor_server;
 mod error;
-mod models;
-mod utility;
 
 use crate::args::{Args, Mode};
 use structopt::StructOpt;
 
-const SIGNATURE_SIZE: usize = 256;
 
 #[tokio::main]
 async fn main() {

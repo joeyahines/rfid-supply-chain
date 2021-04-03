@@ -1,10 +1,10 @@
 use crate::args::{Args, DistributorServerArgs};
 use crate::error::ApiError;
-use crate::models::requests::key_request::{KeyRequest, KeyResponse};
-use crate::models::requests::update_blockchain::UpdateBlockChainRequest;
-use crate::models::requests::update_record::{UpdateRecordRequest, UpdateRecordResponse};
-use crate::models::rfid::{RfidBuilder, RfidData};
-use crate::utility::open_private_key;
+use models::requests::key_request::{KeyRequest, KeyResponse};
+use models::requests::update_blockchain::UpdateBlockChainRequest;
+use models::requests::update_record::{UpdateRecordRequest, UpdateRecordResponse};
+use models::rfid::{RfidBuilder, RfidData};
+use models::utility::open_private_key;
 use openssl::pkey::Private;
 use openssl::rsa::Rsa;
 use reqwest::Url;

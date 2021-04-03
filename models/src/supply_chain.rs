@@ -3,7 +3,7 @@ use std::convert::TryFrom;
 use std::io::{Cursor, Read};
 
 use crate::error::RfidDataParseError;
-use crate::models::{deserialize_base64, serialize_base64, BlockChainEntry};
+use crate::{deserialize_base64, serialize_base64, BlockChainEntry};
 use crate::SIGNATURE_SIZE;
 use byteorder::{LittleEndian, ReadBytesExt, WriteBytesExt};
 

@@ -1,22 +1,7 @@
-use serde::de::DeserializeOwned;
-use serde::Serialize;
 use sled::{open, Db};
 use std::path::Path;
 use std::sync::Arc;
-
-pub trait DatabaseModel: Serialize + DeserializeOwned {
-    type ID;
-
-    fn id(&self) -> Self::ID;
-    fn set_id(&mut self, id: Self::ID);
-
-    fn id_to_bytes(self) -> Vec<u8> {
-        Self::id_type_to_bytes(self.id())
-    }
-
-    fn id_type_to_bytes(id: Self::ID) -> Vec<u8>;
-    fn tree() -> String;
-}
+use models::DatabaseModel;
 
 pub struct Database {
     db: Db,

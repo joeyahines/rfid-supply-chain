@@ -1,7 +1,7 @@
-use crate::database::DatabaseModel;
-use crate::models::key::PublicKey;
-use crate::models::rfid::RfidData;
-use crate::models::{deserialize_base64, serialize_base64, BlockChainEntry};
+use crate::DatabaseModel;
+use crate::key::PublicKey;
+use crate::rfid::RfidData;
+use crate::{deserialize_base64, serialize_base64, BlockChainEntry};
 use byteorder::{LittleEndian, WriteBytesExt};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

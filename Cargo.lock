@@ -673,6 +673,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "models"
+version = "0.1.0"
+dependencies = [
+ "base64",
+ "byteorder",
+ "crc",
+ "openssl",
+ "serde 1.0.124",
+ "serde_json",
+]
+
+[[package]]
 name = "multipart"
 version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1006,6 +1018,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "raspi-scanner"
+version = "0.1.0"
+
+[[package]]
 name = "redox_syscall"
 version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1083,6 +1099,7 @@ dependencies = [
  "byteorder",
  "config",
  "crc",
+ "models",
  "openssl",
  "reqwest",
  "serde 1.0.124",
